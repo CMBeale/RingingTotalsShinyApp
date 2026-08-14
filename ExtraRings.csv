@@ -1,0 +1,85 @@
+﻿record_type,ring_no,species_name,age,sex,sexing_method,breeding_condition,visit_date,capture_time,location_name,wing_length,weight,moult_code,old_greater_coverts,primary_moult,ringer_initials,processor_initials,fatCombined,pectoral_muscle
+N,D626595,Blue tit,3J,,,,11/07/2019,19:45,"HEEAWE (Heslington East, West Square)",63,12.7,P,,,CMB,,B4,3
+N,D626596,Robin,3J,,,,11/07/2019,19:45,"HEEAWE (Heslington East, West Square)",72,20.9,P,,,CMB,,B2,2
+N,D626597,Reed warbler,3J,,,,11/07/2019,19:45,"HEEAWE (Heslington East, West Square)",64,17.6,P,,,CMB,,B2,2
+N,D626598,Reed warbler,3J,,,,11/07/2019,20:40,"HEEAWE (Heslington East, West Square)",63,12.0,P,,,CMB,,B2,2
+N,SH16501,Kingfisher,3,F,P,,17/07/2019,06:30,"HEEAWE (Heslington East, West Square)",77,32.8,,,,ZJY,,-,-
+N,D626599,Blackcap,3J,,,,17/07/2019,06:30,"HEEAWE (Heslington East, West Square)",73,16.4,J,,,JGD,,B0,2
+N,D626600,Reed warbler,3J,,,,17/07/2019,06:30,"HEEAWE (Heslington East, West Square)",64,10.5,P,,,JGD,,B0,1
+N,D973001,Reed bunting,3J,,,,17/07/2019,06:45,"HEEAWE (Heslington East, West Square)",74,16.7,J,,,JGD,,B0,1
+N,D973002,Reed warbler,-,,,,17/07/2019,06:45,"HEEAWE (Heslington East, West Square)",-,-,-,-,-,JGD,,-,-
+N,D973003,Reed bunting,3J,,,,17/07/2019,07:20,"HEEAWE (Heslington East, West Square)",76,15.5,J,,,JGD,,B0,1
+N,D973004,Goldfinch,3J,,,,17/07/2019,07:20,"HEEAWE (Heslington East, West Square)",81,15.7,J,,,JGD,,B0,1
+N,D973005,Reed warbler,3J,,,,17/07/2019,07:20,"HEEAWE (Heslington East, West Square)",64,11.2,P,,,JGD,,B0,2
+N,D973006,Reed warbler,4,M,CP,CP,17/07/2019,07:20,"HEEAWE (Heslington East, West Square)",65,11.5,,,,JGD,,B0,2
+N,D973007,Goldfinch,3J,,,,17/07/2019,07:20,"HEEAWE (Heslington East, West Square)",76,13.9,J,,,JGD,,B0,2
+N,D973008,Blue tit,3J,,,,17/07/2019,07:30,"HEEAWE (Heslington East, West Square)",62,10.1,P,,,JGD,,B0,3
+N,D973009,Reed bunting,3J,,,,17/07/2019,07:30,"HEEAWE (Heslington East, West Square)",73,16.0,J,,,JGD,,B0,1
+N,D973010,Reed bunting,3J,,,,17/07/2019,07:30,"HEEAWE (Heslington East, West Square)",80,18.1,J,,,JGD,,B0,1
+N,D973011,Blue tit,3J,,,,17/07/2019,07:30,"HEEAWE (Heslington East, West Square)",65,10.9,P,,,ZJY,,B1,2
+N,D973012,Blue tit,3J,,,,17/07/2019,07:30,"HEEAWE (Heslington East, West Square)",63,10.5,P,,,JGD,,B0,3
+N,D973013,Reed bunting,3J,,,,17/07/2019,07:30,"HEEAWE (Heslington East, West Square)",79,17.9,J,,,JGD,,B0,1
+N,D973014,Reed warbler,3J,,,,17/07/2019,07:30,"HEEAWE (Heslington East, West Square)",67,11.2,P,,,JGD,,B0,1
+N,D973015,Robin,3J,,,,17/07/2019,07:30,"HEEAWE (Heslington East, West Square)",71,20.6,P,,,JGD,,B0,2
+N,D973016,Goldfinch,3J,,,,17/07/2019,08:00,"HEEAWE (Heslington East, West Square)",79,14.4,J,,,JGD,,B0,2
+N,D973017,Blackcap,3J,,,,17/07/2019,08:00,"HEEAWE (Heslington East, West Square)",77,17.5,P,,,JGD,,B0,1
+N,D973018,Blackcap,4,F,P,BP,17/07/2019,08:30,"HEEAWE (Heslington East, West Square)",74,18.1,M,,0000000001,JGD,,B0,1
+N,D973019,Blackcap,3J,,,,17/07/2019,08:30,"HEEAWE (Heslington East, West Square)",-,-,-,,,ZJY,,-,-
+N,D973020,Bullfinch,3J,,,,17/07/2019,08:30,"HEEAWE (Heslington East, West Square)",79,18.9,P,,,ZJY,,B0,1
+N,D973021,Reed warbler,3J,,,,17/07/2019,08:30,"HEEAWE (Heslington East, West Square)",64,11.1,P,,,JGD,,B0,1
+N,D973022,Goldfinch,3J,,,,17/07/2019,08:30,"HEEAWE (Heslington East, West Square)",79,14.0,J,,,ZJY,,B0,1
+N,D973023,Reed warbler,3J,,,,17/07/2019,08:30,"HEEAWE (Heslington East, West Square)",66,11.6,P,,,JGD,,B0,1
+N,D973024,Blackcap,4,F,P,,17/07/2019,09:30,"HEEAWE (Heslington East, West Square)",75,-,,,,ZJY,,B0,1
+N,D973025,Reed warbler,1J,,,,17/07/2019,09:30,"HEEAWE (Heslington East, West Square)",65,12.4,,,,JGD,,B1,1
+N,D973026,Reed warbler,3J,,,,17/07/2019,09:30,"HEEAWE (Heslington East, West Square)",58,10.7,P,,,VJM,,B0,1
+N,D973027,Reed warbler,3J,,,,17/07/2019,09:30,"HEEAWE (Heslington East, West Square)",65,12.0,P,,,JGD,,B0,1
+N,D973028,Reed warbler,3J,,,,17/07/2019,09:30,"HEEAWE (Heslington East, West Square)",65,11.0,P,,,JGD,,B0,1
+N,D973029,Reed warbler,3J,,,,02/08/2019,06:20,"HEEAWE (Heslington East, West Square)",63,12.2,P,,,ZJY,,B0,1
+N,D973030,Reed warbler,4,F,BP,BP,02/08/2019,06:20,"HEEAWE (Heslington East, West Square)",65,11.5,,,,JGD,,B3,-
+N,D973031,Reed warbler,3J,,,,02/08/2019,06:20,"HEEAWE (Heslington East, West Square)",64,11.7,P,,,ZJY,,B1,1
+N,D973032,Reed warbler,3J,,,,02/08/2019,06:30,"HEEAWE (Heslington East, West Square)",64,10.5,P,,,JGD,,B0,1
+N,D973033,Robin,3J,,,,02/08/2019,06:30,"HEEAWE (Heslington East, West Square)",76,18.3,P,4,,ZJY,,B0,1
+N,D973034,Reed warbler,3J,,,,02/08/2019,06:30,"HEEAWE (Heslington East, West Square)",65,11.5,P,,,CAC,,B0,1
+N,D973035,Reed warbler,4,F,BP,BP,02/08/2019,06:30,"HEEAWE (Heslington East, West Square)",65,11.7,,,,JGD,,B0,1
+N,D973036,Bullfinch,5,M,P,,02/08/2019,06:30,"HEEAWE (Heslington East, West Square)",80,18.7,,,,ZJY,,B1,1
+N,D973037,Reed warbler,3J,,,,02/08/2019,06:30,"HEEAWE (Heslington East, West Square)",63,10.3,P,,,CAC,,B0,1
+N,D973038,Reed bunting,4,F,P,BP,02/08/2019,06:30,"HEEAWE (Heslington East, West Square)",72,18.9,M,,0000000122,JGD,,B0,2
+N,D973039,Reed warbler,3J,,,,02/08/2019,07:00,"HEEAWE (Heslington East, West Square)",66,11.8,P,,,ZJY,,B2,1
+N,D973040,Bullfinch,5,M,P,,02/08/2019,07:00,"HEEAWE (Heslington East, West Square)",82,20.8,M,,0000000001,JGD,,B0,1
+N,D973041,Blackcap,3J,,,,02/08/2019,07:00,"HEEAWE (Heslington East, West Square)",74,16.2,P,,,CAC,,B0,1
+N,D973042,Whitethroat,3J,,,,02/08/2019,07:00,"HEEAWE (Heslington East, West Square)",73,13.7,P,,,ZJY,,B0,1
+N,D973043,Reed warbler,3J,,,,02/08/2019,07:00,"HEEAWE (Heslington East, West Square)",65,11.8,P,,,JGD,,B0,1
+N,D973044,Reed bunting,3J,,,,02/08/2019,07:00,"HEEAWE (Heslington East, West Square)",74,16.1,J,,,JGD,,B0,1
+N,D973045,Whitethroat,3J,,,,02/08/2019,07:00,"HEEAWE (Heslington East, West Square)",71,13.4,P,,,CAC,,B0,1
+N,D973046,Blackcap,4,M,P,,02/08/2019,07:00,"HEEAWE (Heslington East, West Square)",77,16.5,J,,,ZJY,,B0,1
+N,D973047,Linnet,3J,,,,02/08/2019,07:15,"HEEAWE (Heslington East, West Square)",80,18.1,P,,,ZJY,,B1,1
+N,D973048,Blackcap,3J,,,,02/08/2019,07:15,"HEEAWE (Heslington East, West Square)",75,17.7,P,,,JGD,,B0,1
+N,D973049,Reed warbler,3J,,,,02/08/2019,08:00,"HEEAWE (Heslington East, West Square)",65,11.0,P,,,JGD,,B0,1
+N,D973050,Robin,3J,,,,02/08/2019,08:00,"HEEAWE (Heslington East, West Square)",76,16.4,P,,,CAC,,B0,1
+N,D973051,Reed warbler,3J,,,,02/08/2019,08:00,"HEEAWE (Heslington East, West Square)",66,10.7,P,,,JGD,,B0,1
+N,D973052,Reed warbler,3J,,,,02/08/2019,08:00,"HEEAWE (Heslington East, West Square)",65,10.9,P,,,ZJY,,B0,1
+N,D973053,Blue tit,4,,,,02/08/2019,08:00,"HEEAWE (Heslington East, West Square)",63,10.1,M,,2234555555,CAC,,B0,2
+N,D973054,Blue tit,3J,,,,02/08/2019,08:20,"HEEAWE (Heslington East, West Square)",63,9.9,P,,,JGD,,B0,2
+N,D973055,Robin,3J,,,,02/08/2019,08:20,"HEEAWE (Heslington East, West Square)",72,16.6,P,,,JGD,,B1,1
+N,D973056,Reed bunting,3J,,,,02/08/2019,08:20,"HEEAWE (Heslington East, West Square)",80,20.0,J,,,ZJY,,-,1
+N,D973057,Blue tit,3J,,,,02/08/2019,09:00,"HEEAWE (Heslington East, West Square)",60,10.0,P,,,CMB,,B0,2
+N,D973058,Bullfinch,3J,,,,02/08/2019,09:00,"HEEAWE (Heslington East, West Square)",83,21.5,P,,,CMB,,B0,2
+N,D973059,Reed warbler,3J,,,,02/08/2019,09:00,"HEEAWE (Heslington East, West Square)",64,11.9,P,,,JGD,,B0,1
+N,D973060,Goldfinch,3J,,,,02/08/2019,09:00,"HEEAWE (Heslington East, West Square)",82,14.4,J,,,CAC,,B1,2
+N,D973061,Blackcap,3J,,,,02/08/2019,09:00,"HEEAWE (Heslington East, West Square)",74,18.6,P,,,CAC,,B0,2
+N,D973062,Bullfinch,3J,,,,02/08/2019,10:15,"HEEAWE (Heslington East, West Square)",80,21.4,J,,,JGD,,B0,2
+N,D973063,Reed warbler,3J,,,,02/08/2019,10:15,"HEEAWE (Heslington East, West Square)",64,11.8,P,,,ZJY,,B1,1
+N,D973064,Reed warbler,3J,,,,02/08/2019,10:15,"HEEAWE (Heslington East, West Square)",65,10.2,P,,,CAC,,B0,1
+N,D973065,Reed warbler,3J,,,,02/08/2019,10:15,"HEEAWE (Heslington East, West Square)",64,11.9,P,,,JGD,,B0,1
+N,D973066,Reed warbler,3J,,,,02/08/2019,10:15,"HEEAWE (Heslington East, West Square)",64,11.4,P,,,ZJY,,B2,2
+N,D973067,Reed warbler,3J,,,,02/08/2019,10:15,"HEEAWE (Heslington East, West Square)",64,11.0,P,,,CAC,,B0,1
+N,D973068,Reed warbler,3J,,,,02/08/2019,10:15,"HEEAWE (Heslington East, West Square)",66,10.1,P,,,ZJY,,B0,1
+N,RL46101,Redwing,3,,,,06/11/2019,09:40,"HEEAWE (Heslington East, West Square)",117,64.1,,,,JGD,,B1,2
+N,RL46102,Redwing,3,,,,06/11/2019,09:40,"HEEAWE (Heslington East, West Square)",116,57.9,,,,JGD,,B0,2
+S,D973057,Blue tit,3,,,,06/11/2019,10:00,"HEEAWE (Heslington East, West Square)",60,9.7,,,,JGD,,-,-
+N,RL46103,Redwing,4,,,,13/11/2019,08:45,"HEEAWE (Heslington East, West Square)",121,63.4,,,,JGD,,B0,1
+N,LK06767,Blackbird,5,F,P,,17/01/2020,08:20,"HEEAWE (Heslington East, West Square)",127,95.4,,,,CC,-,B1,2
+N,RL46104,Redwing,5,,,,17/01/2020,09:15,"HEEAWE (Heslington East, West Square)",122,65.8,,6,,JHW,,B2,2
+N,RL46105,Redwing,5,,,,17/01/2020,09:15,"HEEAWE (Heslington East, West Square)",118,65.5,,,,JGD,,-,-
+N,RL46106,Redwing,5,,,,17/01/2020,09:15,"HEEAWE (Heslington East, West Square)",116,66.7,,,,JHW,,B2,2
+S,D973057,Blue tit,5,,,,17/01/2020,09:15,"HEEAWE (Heslington East, West Square)",60,-,,,,JHW,,B0,3
