@@ -1,273 +1,183 @@
-# Extracting information from BTO DemOn .html recovery reports #
-# Stephen Vickers - 08/07/2022
+# Extracting information from BTO DemOn .html recovery reports
+# Stephen Vickers - 08/07/2022 (Updated for Linux server locale & UTF-8 robustness)
 
 if (!require('rvest')) install.packages('rvest'); library(rvest)
 if (!require('tidyr')) install.packages('tidyr'); library(tidyr)
 if (!require('stringr')) install.packages('stringr'); library(stringr)
 if (!require('lubridate')) install.packages('lubridate'); library(lubridate)
 if (!require('geosphere')) install.packages('geosphere'); library(geosphere)
-if (!require('measurements')) install.packages('measurements'); library(measurements)
+
+# Helper function to convert messy HTML DMS coordinate strings to Decimal Degrees
+parse_dms_to_dec <- function(coord_str) {
+  if (is.na(coord_str) || !nzchar(trimws(coord_str))) return(NA_real_)
+  
+  # Normalize character encoding & non-breaking spaces
+  s <- gsub("\u00a0", " ", coord_str)
+  s <- iconv(s, from = "UTF-8", to = "ASCII//TRANSLIT", sub = " ")
+  
+  # Identify directional sign (South or West indicates negative)
+  is_negative <- grepl("[SWsw-]", s)
+  
+  # Keep only numeric digits, decimals, and spaces
+  s_clean <- gsub("[^0-9.]+", " ", s)
+  s_clean <- str_squish(s_clean)
+  
+  nums <- as.numeric(unlist(strsplit(s_clean, " ")))
+  nums <- nums[!is.na(nums)]
+  
+  if (length(nums) == 0) return(NA_real_)
+  
+  deg <- nums[1]
+  min <- ifelse(length(nums) >= 2, nums[2], 0)
+  sec <- ifelse(length(nums) >= 3, nums[3], 0)
+  
+  dec <- deg + (min / 60) + (sec / 3600)
+  if (is_negative) dec <- -dec
+  
+  return(dec)
+}
+
+# Helper to robustly parse date strings across different server locales
+parse_recovery_date <- function(date_str) {
+  if (is.na(date_str) || !nzchar(trimws(date_str))) return(as.Date(NA))
+  
+  # Clean printable ASCII characters & strip spaces
+  d_clean <- gsub("[^\x20-\x7E]", "", date_str)
+  d_clean <- str_squish(d_clean)
+  
+  parsed <- suppressWarnings(lubridate::dmy(d_clean, quiet = TRUE))
+  if (is.na(parsed)) {
+    parsed <- suppressWarnings(lubridate::ymd(d_clean, quiet = TRUE))
+  }
+  return(as.Date(parsed))
+}
 
 read_recovery <- function(bto_html_file) {
-  df <- read_html(bto_html_file) # Read in in .html recovery form
+  # Read HTML file using UTF-8 encoding
+  df <- read_html(bto_html_file, encoding = "UTF-8")
   
+  # Create structured data frame
+  data <- data.frame(
+    Species = character(2),
+    Latin = character(2),
+    Event = character(2),
+    Lat = numeric(2),
+    Lon = numeric(2),
+    Distance = character(2),
+    Ring_no = character(2),
+    Date = as.Date(rep(NA, 2)),
+    Site = character(2),
+    Age = character(2),
+    Sex = character(2),
+    Duration = character(2),
+    Direction = character(2),
+    Remarks = character(2),
+    Recovery_type = character(2),
+    stringsAsFactors = FALSE
+  )
   
-  # Create data frame for data
-  data <- data.frame(matrix(nrow=2, ncol=15))
-  colnames(data) <- c('Species','Latin','Event', 'Lat', 'Lon', 'Distance', 'Ring_no', 'Date', 'Site','Age', 'Sex', 'Duration', 'Direction', 'Remarks', 'Recovery_type')
-  
-  
-  
-  # General framework for pulling a section of the .html file into a character string
-  
-  myurl <- df %>%
-    html_nodes(".ringingPlaceSection.spanRow") %>%
-    html_text2()
-  
-  # To find .html section names I open up a .html recovery form in Chrome and right click on the part of the form you're interested in and select 'Inspect'. It will bring up the html viewer screen. It should take you to the html element for that section and as you hover over the code it will highlight the sections of the page it refers to.
-  
-  # We can ther split that string based on \r which is the seperator used between sections  
+  # --- 1. RINGING PLACE COORDINATES & RINGING EVENT ---
+  myurl <- df %>% html_nodes(".ringingPlaceSection.spanRow") %>% html_text2()
   parts <- str_split(myurl, "\r ", n = 5)
   
+  northing_raw <- tryCatch(str_split(parts[[1]][4], ": ")[[1]][2], error = function(e) NA_character_)
+  easting_raw  <- tryCatch(str_split(parts[[1]][5], " Accu")[[1]][1], error = function(e) NA_character_)
   
-  # This format is repeated for all information needed
-  
-  northing <- parts[[1]][4]
-  northing <- str_split(northing, ": ")
-  northing <- northing[[1]][2]
-  northing = gsub('deg', '', northing)
-  northing = gsub('min ', ' 0', northing)
-  
-  easting <- parts[[1]][5]
-  easting <- str_split(easting, " Accu", n = 2)
-  easting <- easting[[1]][1]
-  easting = gsub('deg', '', easting)
-  easting = gsub('min ', ' 0', easting)
-  
-  ewns <- ifelse((str_extract(northing,"\\(?[EWNS,.]+\\)?") %in% c("E","N")) | (length(grep("-", northing))==0),"+","-")
-  northing <- gsub('-', '', northing)
-  dms <- str_sub(northing,1,str_length(northing)-1)
-  df2 <- paste0(ewns,dms)
-  if(substr(df2, 1, 2)=="--") df2 <- gsub('--', '-', df2)
-  df_dec <- measurements::conv_unit(df2,from = 'deg_min_sec', to = 'dec_deg')
-  
-  lat <- as.numeric(df_dec)
-  
-  ewns <- ifelse((str_extract(easting,"\\(?[EWNS,.]+\\)?") %in% c("E","N")) | (length(grep("-", easting))==0),"+","-")
-  easting <- gsub('-', '', easting)
-  dms <- str_sub(easting,1,str_length(easting)-1)
-  df2 <- paste0(ewns,dms)
-  if(substr(df2, 1, 2)=="--") df2 <- gsub('--', '-', df2)
-  df_dec <- measurements::conv_unit(df2,from = 'deg_min_sec', to = 'dec_deg')
-  
-  lon <- as.numeric(df_dec)
-  
-  data$Lat[1] <- lat
-  data$Lon[1] <- lon
+  data$Lat[1]   <- parse_dms_to_dec(northing_raw)
+  data$Lon[1]   <- parse_dms_to_dec(easting_raw)
   data$Event[1] <- 'Ringed'
   
-  myurl <- df %>%
-    html_nodes(".quickSummarySection") %>%
-    html_text2()
-  
+  # --- 2. SPECIES & RING NO ---
+  myurl <- df %>% html_nodes(".quickSummarySection") %>% html_text2()
   parts <- str_split(myurl, "\r ", n = 20)
-  spec <- parts[[1]][6]
-  spec <- str_split(spec, " [(]", n = 2)
-  spec <- spec[[1]][1]
   
-  data$Species <- spec
+  spec_raw <- tryCatch(parts[[1]][6], error = function(e) "")
+  spec_split <- str_split(spec_raw, " [(]", n = 2)[[1]]
+  data$Species <- spec_split[1]
+  data$Latin   <- ifelse(length(spec_split) > 1, gsub("\\)", "", spec_split[2]), NA_character_)
   
+  data$Ring_no <- tryCatch(parts[[1]][18], error = function(e) NA_character_)
   
-  latin <- parts[[1]][6]
-  latin <- str_split(latin, " [(]", n = 2)
-  latin <- latin[[1]][2]
-  latin <- substr(latin,1,nchar(latin)-1)
-  data$Latin <- latin
-  
-  ring <- parts[[1]][18]
-  data$Ring_no <- ring
-  
-  myurl <- df %>%
-    html_nodes(".ringingDateSection.spanRow") %>%
-    html_text2()
+  # --- 3. DATES ---
+  myurl <- df %>% html_nodes(".ringingDateSection.spanRow") %>% html_text2()
   parts <- str_split(myurl, " ", n = 20)
-  date <- parts[[1]][4]
-  data$Date[1] <- as.character(dmy(date))
+  date1_raw <- tryCatch(parts[[1]][4], error = function(e) NA_character_)
   
-  myurl <- df %>%
-    html_nodes(".spanRow") %>%
-    html_text2()
-  myurl <- myurl[9]
-  parts <- str_split(myurl, " ", n = 20)
-  date <- parts[[1]][4]
-  data$Date[2] <- as.character(dmy(date))
-  data$Date <- ymd(data$Date)
+  myurl_span <- df %>% html_nodes(".spanRow") %>% html_text2()
+  date2_raw  <- tryCatch(str_split(myurl_span[9], " ", n = 20)[[1]][4], error = function(e) NA_character_)
   
-  myurl2 <- df %>%
-    html_nodes(".findingCountyAndCoordsSection.spanRow") %>%
-    html_text2() 
+  data$Date[1] <- parse_recovery_date(date1_raw)
+  data$Date[2] <- parse_recovery_date(date2_raw)
   
-  parts <- str_split(myurl2, "\r ", n = 5)
+  # --- 4. FINDING COORDINATES ---
+  myurl2 <- df %>% html_nodes(".findingCountyAndCoordsSection.spanRow") %>% html_text2()
+  parts  <- str_split(myurl2, "\r ", n = 5)
   
-  northing <- parts[[1]][4]
-  northing <- str_split(northing, ": ")
-  northing <- northing[[1]][2]
-  northing = gsub('deg', '', northing)
-  northing = gsub('min ', ' 0', northing)
+  northing_raw2 <- tryCatch(str_split(parts[[1]][4], ": ")[[1]][2], error = function(e) NA_character_)
+  easting_raw2  <- tryCatch(str_split(parts[[1]][5], " Accu")[[1]][1], error = function(e) NA_character_)
   
-  easting <- parts[[1]][5]
-  easting <- str_split(easting, " Accu", n = 2)
-  easting <- easting[[1]][1]
-  easting = gsub('deg', '', easting)
-  easting = gsub('min ', ' 0', easting)
-  
-  ewns <- ifelse((str_extract(northing,"\\(?[EWNS,.]+\\)?") %in% c("E","N")) | (length(grep("-", northing))==0),"+","-")
-  northing <- gsub('-', '', northing)
-  dms <- str_sub(northing,1,str_length(northing)-1)
-  df2 <- paste0(ewns,dms)
-  if(substr(df2, 1, 2)=="--") df2 <- gsub('--', '-', df2)
-  
-  df_dec <- measurements::conv_unit(df2,from = 'deg_min_sec', to = 'dec_deg')
-  
-  lat <- as.numeric(df_dec)
-  
-  ewns <- ifelse((str_extract(easting,"\\(?[EWNS,.]+\\)?") %in% c("E","N")) | (length(grep("-", easting))==0),"+","-")
-  easting <- gsub('-', '', easting)
-  dms <- str_sub(easting,1,str_length(easting)-1)
-  df2 <- paste0(ewns,dms)
-  if(substr(df2, 1, 2)=="--") df2 <- gsub('--', '-', df2)
-  
-  df_dec <- measurements::conv_unit(df2,from = 'deg_min_sec', to = 'dec_deg')
-  
-  lon <- as.numeric(df_dec)
-  
-  data$Lat[2] <- lat
-  data$Lon[2] <- lon
+  data$Lat[2]   <- parse_dms_to_dec(northing_raw2)
+  data$Lon[2]   <- parse_dms_to_dec(easting_raw2)
   data$Event[2] <- 'Re-encountered'
   
-  
-  myurl <- df %>%
-    html_nodes(".regPlaceCodeSection") %>%
-    html_text2()
-  
+  # --- 5. SITES ---
+  myurl <- df %>% html_nodes(".regPlaceCodeSection") %>% html_text2()
   parts <- str_split(myurl, "\r ", n = 20)
-  loc <- parts[[1]][4]
-  loc <- str_split(loc, "name: ", n = 2)
-  loc <- loc[[1]][2]
-  loc <- str_split(loc, "\r", n = 2)
-  loc <- loc[[1]][1]
+  loc1  <- tryCatch(str_split(str_split(parts[[1]][4], "name: ")[[1]][2], "\r")[[1]][1], error = function(e) NA_character_)
   
-  myurl <- df %>%
-    html_nodes(".spanRow") %>%
-    html_text2()
+  loc2  <- tryCatch(str_split(str_split(str_split(myurl_span[10], "\r ", n = 20)[[1]][4], "name: ")[[1]][2], "\r")[[1]][1], error = function(e) NA_character_)
+  data$Site <- c(loc1, loc2)
   
-  myurl <- myurl[10]
-  parts <- str_split(myurl, "\r ", n = 20)
-  loc2 <- parts[[1]][4]
-  loc2 <- str_split(loc2, "name: ", n = 2)
-  loc2 <- loc2[[1]][2]
-  loc2 <- str_split(loc2, "\r", n = 2)
-  loc2 <- loc2[[1]][1]
-  
-  data$Site <- c(loc,loc2)
-  
-  
-  data$Distance <- NA
+  # --- 6. DISTANCE ---
   data$Distance[1] <- '0km'
+  if (!is.na(data$Lon[1]) && !is.na(data$Lat[1]) && !is.na(data$Lon[2]) && !is.na(data$Lat[2])) {
+    dist_m <- geosphere::distHaversine(c(data$Lon[1], data$Lat[1]), c(data$Lon[2], data$Lat[2]))
+    data$Distance[2] <- paste0(round(dist_m / 1000, 1), 'km')
+  } else {
+    data$Distance[2] <- NA_character_
+  }
   
-  data$Distance[2] <- paste0(round(distHaversine(cbind(data$Lon, data$Lat))/1000,1),'km')
+  # --- 7. AGE & SEX ---
+  myurl_age <- df %>% html_nodes(".ageSexSection.spanRow") %>% html_text2()
+  myurl_ring_unv <- df %>% html_nodes(".ringNotVerifiedSection.spanRow") %>% html_text2()
   
-  myurl <- df %>%
-    html_nodes(".ageSexSection.spanRow") %>%
-    html_text2()
+  parts_age1 <- str_split(myurl_age, "\r ", n = 20)
+  age1 <- tryCatch(str_split(parts_age1[[1]][2], ": ")[[1]][2], error = function(e) NA_character_)
+  sex1 <- tryCatch(str_split(parts_age1[[1]][3], ": ")[[1]][2], error = function(e) NA_character_)
   
-  myurl2 <- df %>%
-    html_nodes(".ringNotVerifiedSection.spanRow") %>%
-    html_text2()
+  parts_age2 <- str_split(myurl_ring_unv, "\r ", n = 20)
+  age2 <- tryCatch(str_split(parts_age2[[1]][3], ": ")[[1]][2], error = function(e) NA_character_)
+  sex2 <- tryCatch(str_split(parts_age2[[1]][4], ": ")[[1]][2], error = function(e) NA_character_)
   
-  parts <- str_split(myurl, "\r ", n = 20)
-  age1 <- parts[[1]][2]
-  age1 <- str_split(age1, ": ", n = 20)
-  age1 <- age1[[1]][2]
+  data$Age <- c(age1, age2)
+  data$Sex <- c(sex1, sex2)
   
-  sex1 <- parts[[1]][3]
-  sex1 <- str_split(sex1, ": ", n = 20)
-  sex1 <- sex1[[1]][2]
+  # --- 8. DURATION & DIRECTION ---
+  myurl_dur <- df %>% html_nodes(".distanceDurationDirectionSection.spanRow") %>% html_text2()
+  parts_dur <- str_split(myurl_dur, "\r ", n = 20)
   
-  parts <- str_split(myurl2, "\r ", n = 20)
-  age2 <- parts[[1]][3]
-  age2 <- str_split(age2, ": ", n = 20)
-  age2 <- age2[[1]][2]
-  sex2 <- parts[[1]][4]
-  sex2 <- str_split(sex2, ": ", n = 20)
-  sex2 <- sex2[[1]][2]
+  duration2  <- tryCatch(str_split(parts_dur[[1]][2], ": ")[[1]][2], error = function(e) NA_character_)
+  direction2 <- tryCatch(str_split(str_split(parts_dur[[1]][4], ": ")[[1]][2], "\r")[[1]][1], error = function(e) NA_character_)
   
-  data$Age[1] <- age1
-  data$Age[2] <- age2
+  data$Duration  <- c(NA_character_, duration2)
+  data$Direction <- c(NA_character_, direction2)
   
-  data$Sex[1] <- sex1
-  data$Sex[2] <- sex2
+  # --- 9. REMARKS & RECOVERY TYPE ---
+  myurl_rem <- df %>% html_nodes(".findingBirdRemarks.spanRow") %>% html_text2()
+  remarks1  <- tryCatch(str_split(str_split(parts[[1]][2], ": ")[[1]][2], "\r")[[1]][1], error = function(e) NA_character_)
+  remarks2  <- tryCatch(str_split(str_split(str_split(myurl_rem, "\r ", n = 20)[[1]][2], ": ")[[1]][2], "\r")[[1]][1], error = function(e) NA_character_)
   
-  myurl <- df %>%
-    html_nodes(".distanceDurationDirectionSection.spanRow") %>%
-    html_text2()
+  data$Remarks <- c(remarks1, remarks2)
   
-  parts <- str_split(myurl, "\r ", n = 20)
-  duration2 <- parts[[1]][2]
-  duration2 <- str_split(duration2, ": ", n = 20)
-  duration2 <- duration2[[1]][2]
+  myurl_cond <- df %>% html_nodes(".findingBirdCondition.spanRow") %>% html_text2()
+  parts_cond <- str_split(myurl_cond, "\r ", n = 20)
+  rt2 <- tryCatch({
+    p <- parts_cond[[1]][2:3]
+    p_split <- str_split(p, "\r", n = 20)
+    paste(p_split[[1]][1], p_split[[2]][1])
+  }, error = function(e) NA_character_)
   
-  parts <- str_split(myurl, "\r ", n = 20)
-  direction2 <- parts[[1]][4]
-  direction2 <- str_split(direction2, ": ", n = 20)
-  direction2 <- direction2[[1]][2]
-  direction2 <- str_split(direction2, "\r", n = 20)
-  direction2 <- direction2[[1]][1]
-  
-  data$Duration[1] <- NA
-  data$Duration[2] <- duration2
-  
-  data$Direction[1] <- NA
-  data$Direction[2] <- direction2
-  
-  myurl <- df %>%
-    html_nodes(".biometricsSection") %>%
-    html_text2()
-  
-  myurl2 <- df %>%
-    html_nodes(".findingBirdRemarks.spanRow") %>%
-    html_text2()
-  
-  
-  parts <- str_split(myurl[2], "\r ", n = 20)
-  remarks1 <- parts[[1]][2]
-  remarks1 <- str_split(remarks1, ": ", n = 20)
-  remarks1 <- remarks1[[1]][2]
-  remarks1 <- str_split(remarks1, "\r", n = 20)
-  remarks1 <- remarks1[[1]][1]
-  
-  parts <- str_split(myurl2, "\r ", n = 20)
-  remarks2 <- parts[[1]][2]
-  remarks2 <- str_split(remarks2, ": ", n = 20)
-  remarks2 <- remarks2[[1]][2]
-  remarks2 <- str_split(remarks2, "\r", n = 20)
-  remarks2 <- remarks2[[1]][1]
-  
-  data$Remarks[1] <- remarks1
-  data$Remarks[2] <- remarks2
-  
-  myurl <- df %>%
-    html_nodes(".findingBirdCondition.spanRow") %>%
-    html_text2()
-  
-  parts <- str_split(myurl, "\r ", n = 20)
-  rt2 <- parts[[1]][2:3]
-  rt2 <- str_split(rt2, "\r", n = 20)
-  rt2 <- paste(rt2[[1]][1],rt2[[2]][1])
-  
-  
-  data$Recovery_type[1] <- NA
-  data$Recovery_type[2] <- rt2
+  data$Recovery_type <- c(NA_character_, rt2)
   
   return(data)
 }

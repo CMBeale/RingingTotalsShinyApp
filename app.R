@@ -1,3 +1,6 @@
+Sys.setlocale("LC_ALL", "en_GB.UTF-8")
+Sys.setenv(LANG = "en_GB.UTF-8")
+
 library(shinydashboard)
 library(leaflet)
 library(ggplot2)
@@ -601,6 +604,11 @@ server <- function(input, output, session) {
     recoveries$FocalYear <- recoveries$year == yr
     rings_in_focal <- unique(recoveries$ring[recoveries$FocalYear])
     recoveries$FocalYear[recoveries$ring %in% rings_in_focal] <- TRUE
+    # Filter out missing lat/lon before creating spatial objects
+    recoveries <- recoveries[!is.na(recoveries$lat) & !is.na(recoveries$lon), ]
+    
+    # Prevent rendering if no valid rows remain
+    req(nrow(recoveries) > 0)
     
     recovery_lines <- df_to_lines(recoveries)
     recovery_lines$FocalYear <- recovery_lines$year == yr
