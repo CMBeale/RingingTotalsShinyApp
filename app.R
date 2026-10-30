@@ -73,7 +73,6 @@ impute_and_adjust <- function(df, missing_visits) {
   
   imputed_values <- predict(impute_model, missing_records, type = "response")
   
-  # Assign predicted values to appropriate NAs sequentially
   for (i in seq_len(nrow(missing_records))) {
     m_yr <- missing_records$year[i]
     m_sess <- missing_records$session[i]
@@ -295,12 +294,50 @@ ui <- dashboardPage(
         tabName = "survival",
         fluidRow(
           box(
-            width = 12, status = "primary", title = "Max Longevity / Elapsed Time per Species", solidHeader = TRUE,
-            p("Shows the individual bird record with the longest duration between first and last capture for each species, sorted by the most recent last capture date."),
-            downloadButton("dl_survival", "Download Survival CSV", class = "btn-sm btn-info"),
+            width = 12, status = "warning", title = "Survival Parameters", solidHeader = TRUE,
+            fluidRow(
+              column(
+                width = 3,
+                numericInput("survival_focal_year", "Focal Year:", value = as.numeric(format(Sys.Date(), "%Y")), min = 2000, max = 2030)
+              ),
+              column(
+                width = 9,
+                radioButtons(
+                  "survival_site_mode", "Site Filtering Mode:",
+                  choices = c(
+                    "Use All Sites (No filtering)" = "all",
+                    "Use Default Heslington Sites" = "default",
+                    "Select Custom Sites from Dataset" = "custom"
+                  ),
+                  selected = "default"
+                ),
+                conditionalPanel(
+                  condition = "input.survival_site_mode == 'custom'",
+                  uiOutput("ui_survival_site_select")
+                )
+              )
+            )
+          )
+        ),
+        fluidRow(
+          box(
+            width = 12, status = "primary", title = "1. All-Time Max Longevity per Species (Full Historical Record)", solidHeader = TRUE,
+            p("Shows the individual bird with the longest recorded elapsed lifespan for each species calculated across all historical records in the dataset."),
+            downloadButton("dl_survival_alltime", "Download All-Time Longevity CSV", class = "btn-sm btn-info"),
             br(), br(),
             div(class = "table-responsive-container",
-                tableOutput("table_survival")
+                tableOutput("table_survival_alltime")
+            )
+          )
+        ),
+        fluidRow(
+          box(
+            width = 12, status = "success", title = "2. Focal Year Max Longevity (Retraps in Selected Year)", solidHeader = TRUE,
+            p("Shows birds retrapped in the selected focal year with the longest duration between their original ringing date (from any year) and their retrap date in the focal year."),
+            downloadButton("dl_survival_focal", "Download Focal Year Longevity CSV", class = "btn-sm btn-info"),
+            br(), br(),
+            div(class = "table-responsive-container",
+                tableOutput("table_survival_focal")
             )
           )
         )
@@ -370,6 +407,8 @@ ui <- dashboardPage(
           ),
           box(
             width = 8, status = "info", title = "Ringer Summary",
+            uiOutput("ui_ringer_text"),
+            hr(),
             div(class = "table-responsive-container",
                 tableOutput("table_ringer")
             )
@@ -389,15 +428,26 @@ server <- function(input, output, session) {
     processed = FALSE
   )
   
-  # Reactive values for dynamically managing missing visits
   rv_missing_visits <- reactiveVal(data.frame(year = 2025, visit = 4, stringsAsFactors = FALSE))
   
-  # Dynamic UI for Annual Summaries Tab site selector
   output$ui_summary_site_select <- renderUI({
     req(rv$processed, rv$all_dat)
     sites <- sort(unique(rv$all_dat$location_name))
     selectizeInput(
       "selected_summary_sites",
+      "Select Custom Sites:",
+      choices = sites,
+      selected = intersect(default_hes_sites, sites),
+      multiple = TRUE,
+      options = list(placeholder = "Select one or more sites...")
+    )
+  })
+  
+  output$ui_survival_site_select <- renderUI({
+    req(rv$processed, rv$all_dat)
+    sites <- sort(unique(rv$all_dat$location_name))
+    selectizeInput(
+      "selected_survival_sites",
       "Select Custom Sites:",
       choices = sites,
       selected = intersect(default_hes_sites, sites),
@@ -440,7 +490,6 @@ server <- function(input, output, session) {
     all_dat$raw_age <- as.character(all_dat$age)
     all_dat$age <- as.factor(gsub('J', '', all_dat$age))
     
-    # Standardise Initials Logic
     all_dat$initials <- all_dat$ringer_initials
     all_dat$initials[is.na(all_dat$initials) | all_dat$initials == '-'] <- 
       all_dat$processor_initials[is.na(all_dat$initials) | all_dat$initials == '-']
@@ -449,7 +498,6 @@ server <- function(input, output, session) {
     all_dat$visit_date <- as.Date(all_dat$visit_date, "%d/%m/%Y")
     all_dat$year <- as.numeric(format(all_dat$date_time, "%Y"))
     
-    # Apply standardisation map rules
     all_dat$initials[all_dat$initials == 'CC']  <- 'CAC'
     all_dat$initials[all_dat$initials == 'RL']  <- 'RJL'
     all_dat$initials[all_dat$initials == 'NP']  <- 'NMP'
@@ -461,7 +509,6 @@ server <- function(input, output, session) {
     all_dat$initials[all_dat$initials == 'KH' & all_dat$visit_date < as.Date("2017-01-01")] <- 'KCH'
     all_dat$initials[all_dat$initials == 'B1' | all_dat$initials == '-'] <- 'CMB'
     
-    # Taxonomic Matching
     if (file.exists("AviList-v2025.csv")) {
       AviList_names <- read.csv('AviList-v2025.csv', stringsAsFactors = FALSE)
       BTO_names <- data.frame(
@@ -539,7 +586,6 @@ server <- function(input, output, session) {
       )
     }
     
-    # Load Recoveries
     rec_dir <- if (input$rec_folder_mode == "default") file.path(getwd(), "Recoveries") else input$custom_rec_path
     if (dir.exists(rec_dir)) {
       recovery_files <- dir(rec_dir, pattern = 'html', full.names = TRUE)
@@ -581,7 +627,6 @@ server <- function(input, output, session) {
     showNotification("All data successfully loaded and processed!", type = "message")
   })
   
-  # Dynamic UI for CES site selection on Tab 4
   output$ui_ces_site_select <- renderUI({
     req(rv$processed)
     sites_in_data <- sort(unique(rv$all_dat$location_name))
@@ -595,7 +640,6 @@ server <- function(input, output, session) {
     )
   })
   
-  # Leaflet Output
   output$map_leaflet <- renderLeaflet({
     req(rv$processed, rv$recoveries_raw)
     recoveries <- rv$recoveries_raw
@@ -604,10 +648,8 @@ server <- function(input, output, session) {
     recoveries$FocalYear <- recoveries$year == yr
     rings_in_focal <- unique(recoveries$ring[recoveries$FocalYear])
     recoveries$FocalYear[recoveries$ring %in% rings_in_focal] <- TRUE
-    # Filter out missing lat/lon before creating spatial objects
     recoveries <- recoveries[!is.na(recoveries$lat) & !is.na(recoveries$lon), ]
     
-    # Prevent rendering if no valid rows remain
     req(nrow(recoveries) > 0)
     
     recovery_lines <- df_to_lines(recoveries)
@@ -659,7 +701,6 @@ server <- function(input, output, session) {
     m
   })
   
-  # Summary Calculations
   summary_tables <- reactive({
     req(rv$processed)
     df <- rv$all_dat
@@ -667,7 +708,6 @@ server <- function(input, output, session) {
     focal_yr <- input$summary_focal_year
     prev_yr <- focal_yr - 1
     
-    # Filter dataset according to site settings on the Annual Summaries Tab
     if (input$summary_site_mode == "default") {
       df_filtered <- df %>% filter(location_name %in% default_hes_sites)
     } else if (input$summary_site_mode == "custom") {
@@ -741,7 +781,6 @@ server <- function(input, output, session) {
     )
   })
   
-  # Narrative Box
   output$ui_summary_text <- renderUI({
     req(rv$processed)
     sum_data <- summary_tables()
@@ -799,59 +838,133 @@ server <- function(input, output, session) {
     content = function(file) { write.csv(summary_tables()$older_full, file, row.names = FALSE) }
   )
   
-  # --- SURVIVAL ANALYSIS COMPUTATION ---
-  survival_table <- reactive({
+  # --- SURVIVAL ANALYSIS: TABLE 1 (ALL-TIME MAX LONGEVITY) ---
+  survival_alltime_table <- reactive({
     req(rv$processed)
     all_dat <- rv$all_dat
     
-    age_dat <- aggregate(all_dat$date_time,
-                         by = list(ring = all_dat$ring_no, species = all_dat$species_name),
-                         FUN = function(x) round(difftime(max(x), min(x), units = 'days')))
-    cap_dat <- aggregate(all_dat$date_time,
-                         by = list(ring = all_dat$ring_no, species = all_dat$species_name),
-                         FUN = min)
-    age_dat$capture_day <- cap_dat$x
-    last_dat <- aggregate(all_dat$date_time,
-                          by = list(ring = all_dat$ring_no, species = all_dat$species_name),
-                          FUN = max)
-    age_dat$last_day <- last_dat$x
+    if (input$survival_site_mode == "default") {
+      all_dat <- all_dat %>% filter(location_name %in% default_hes_sites)
+    } else if (input$survival_site_mode == "custom") {
+      req(input$selected_survival_sites)
+      all_dat <- all_dat %>% filter(location_name %in% input$selected_survival_sites)
+    }
     
-    age_dat <- age_dat[age_dat$x > 0, ]
-    req(nrow(age_dat) > 0)
+    req(nrow(all_dat) > 0)
     
-    max_age <- by(age_dat, age_dat$species,
-                  FUN = function(df) { df[which.max(as.numeric(df$x)), ] },
-                  simplify = TRUE)
+    # Calculate earliest and latest capture per bird, excluding zero-day durations
+    bird_durations <- all_dat %>%
+      group_by(ring_no, species_name) %>%
+      summarise(
+        first = min(date_time, na.rm = TRUE),
+        last = max(date_time, na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      mutate(
+        days = as.numeric(round(difftime(last, first, units = 'days'))),
+        ring = ring_no,
+        species = species_name
+      ) %>%
+      filter(days > 0)
     
-    max_age_mat <- matrix(unlist(unname(max_age)), ncol = 5, byrow = TRUE)
-    colnames(max_age_mat) <- c("ring", "species", "days", "first", "last")
-    max_age_mat <- as.data.frame(max_age_mat, stringsAsFactors = FALSE)
-    max_age_mat$days <- as.numeric(max_age_mat$days)
-    max_age_mat$first <- as.POSIXct(as.numeric(max_age_mat$first), origin = "1970-01-01")
-    max_age_mat$last <- as.POSIXct(as.numeric(max_age_mat$last), origin = "1970-01-01")
-    max_age_mat$years <- max_age_mat$days / 365.25
-    max_age_mat$tidy <- paste(floor(max_age_mat$years), "years,",
-                              round(max_age_mat$days - floor(max_age_mat$years) * 365.25),
-                              "days")
+    req(nrow(bird_durations) > 0)
     
-    max_age_mat <- max_age_mat[rev(order(max_age_mat$last)), ]
-    return(max_age_mat)
+    max_age_mat <- bird_durations %>%
+      group_by(species) %>%
+      slice_max(order_by = days, n = 1, with_ties = FALSE) %>%
+      ungroup() %>%
+      mutate(
+        years = days / 365.25,
+        tidy = paste(floor(years), "years,", round(days - floor(years) * 365.25), "days")
+      ) %>%
+      arrange(desc(last))
+    
+    return(as.data.frame(max_age_mat, stringsAsFactors = FALSE))
   })
   
-  output$table_survival <- renderTable({
-    df <- survival_table()
-    df_out <- df %>%
+  output$table_survival_alltime <- renderTable({
+    df <- survival_alltime_table()
+    df %>%
       mutate(
         First_Capture = format(first, "%Y-%m-%d"),
         Last_Capture = format(last, "%Y-%m-%d")
       ) %>%
       select(Species = species, Ring = ring, Lifespan = tidy, Days = days, First_Capture, Last_Capture)
-    df_out
   }, digits = 0)
   
-  output$dl_survival <- downloadHandler(
-    filename = function() { "SurvivalAnalysisMaxAge.csv" },
-    content = function(file) { write.csv(survival_table(), file, row.names = FALSE) }
+  output$dl_survival_alltime <- downloadHandler(
+    filename = function() { "SurvivalAnalysis_AllTime_MaxAge.csv" },
+    content = function(file) { write.csv(survival_alltime_table(), file, row.names = FALSE) }
+  )
+  
+  # --- SURVIVAL ANALYSIS: TABLE 2 (FOCAL YEAR RETRAPS MAX LONGEVITY) ---
+  survival_focal_table <- reactive({
+    req(rv$processed)
+    focal_yr <- input$survival_focal_year
+    all_dat <- rv$all_dat
+    
+    if (input$survival_site_mode == "default") {
+      all_dat <- all_dat %>% filter(location_name %in% default_hes_sites)
+    } else if (input$survival_site_mode == "custom") {
+      req(input$selected_survival_sites)
+      all_dat <- all_dat %>% filter(location_name %in% input$selected_survival_sites)
+    }
+    
+    req(nrow(all_dat) > 0)
+    
+    # Filter birds retrapped in focal year
+    focal_retraps <- all_dat %>% filter(year == focal_yr, record_type != 'N')
+    req(nrow(focal_retraps) > 0)
+    
+    focal_rings <- unique(focal_retraps$ring_no)
+    
+    # Original ringing date across all years in dataset
+    first_dates <- all_dat %>%
+      filter(ring_no %in% focal_rings) %>%
+      group_by(ring_no) %>%
+      summarise(first = min(date_time, na.rm = TRUE), .groups = "drop")
+    
+    # Last retrap date in focal year
+    last_dates <- focal_retraps %>%
+      group_by(ring_no, species_name) %>%
+      summarise(last = max(date_time, na.rm = TRUE), .groups = "drop")
+    
+    bird_durations <- inner_join(last_dates, first_dates, by = "ring_no") %>%
+      mutate(
+        days = as.numeric(round(difftime(last, first, units = 'days'))),
+        ring = ring_no,
+        species = species_name
+      ) %>%
+      filter(days > 0)
+    
+    req(nrow(bird_durations) > 0)
+    
+    max_age_mat <- bird_durations %>%
+      group_by(species) %>%
+      slice_max(order_by = days, n = 1, with_ties = FALSE) %>%
+      ungroup() %>%
+      mutate(
+        years = days / 365.25,
+        tidy = paste(floor(years), "years,", round(days - floor(years) * 365.25), "days")
+      ) %>%
+      arrange(desc(last))
+    
+    return(as.data.frame(max_age_mat, stringsAsFactors = FALSE))
+  })
+  
+  output$table_survival_focal <- renderTable({
+    df <- survival_focal_table()
+    df %>%
+      mutate(
+        First_Capture = format(first, "%Y-%m-%d"),
+        Last_Capture = format(last, "%Y-%m-%d")
+      ) %>%
+      select(Species = species, Ring = ring, Lifespan = tidy, Days = days, First_Capture, Last_Capture)
+  }, digits = 0)
+  
+  output$dl_survival_focal <- downloadHandler(
+    filename = function() { paste0("SurvivalAnalysis_Focal_", input$survival_focal_year, "_MaxAge.csv") },
+    content = function(file) { write.csv(survival_focal_table(), file, row.names = FALSE) }
   )
   
   # --- RINGER TOTALS LOGIC ---
@@ -860,7 +973,31 @@ server <- function(input, output, session) {
     selectInput("selected_ringer", "Ringer Initials:", choices = sort(unique(rv$all_dat$initials)))
   })
   
-  # Reactive expression to generate summary table for display and export
+  output$ui_ringer_text <- renderUI({
+    req(rv$processed, input$selected_ringer)
+    
+    df_ringer <- rv$all_dat %>% filter(initials == input$selected_ringer)
+    req(nrow(df_ringer) > 0)
+    
+    total_birds <- nrow(df_ringer)
+    total_sp <- n_distinct(df_ringer$species_name)
+    
+    df_new <- df_ringer %>% filter(record_type == 'N')
+    new_birds <- nrow(df_new)
+    new_sp <- n_distinct(df_new$species_name)
+    
+    df_retrap <- df_ringer %>% filter(record_type != 'N')
+    retrap_birds <- nrow(df_retrap)
+    retrap_sp <- n_distinct(df_retrap$species_name)
+    
+    summary_msg <- sprintf(
+      "Ringer %s has processed a total of %d birds of %d species, including %d new birds of %d species, and %d retraps of %d species.",
+      input$selected_ringer, total_birds, total_sp, new_birds, new_sp, retrap_birds, retrap_sp
+    )
+    
+    p(class = "summary-text-p", summary_msg)
+  })
+  
   ringer_summary_df <- reactive({
     req(rv$processed, input$selected_ringer)
     df_ringer <- rv$all_dat %>%
