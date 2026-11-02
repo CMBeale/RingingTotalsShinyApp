@@ -477,8 +477,12 @@ server <- function(input, output, session) {
       if (!is.null(input$file_extras)) extras <- read.csv(input$file_extras$datapath, stringsAsFactors = FALSE)
     }
     
-    if (any(names(all_dat) == "loc_id")) names(all_dat)[which(names(all_dat) == "loc_id")] <- "location_name"
+    # Clean escaped underscores/dots and whitespace from CSV headers
+    names(all_dat) <- gsub("\\\\_", "_", names(all_dat))
+    names(all_dat) <- gsub("\\.", "_", names(all_dat))
+    names(all_dat) <- trimws(names(all_dat))
     
+    if (any(names(all_dat) == "loc_id")) names(all_dat)[which(names(all_dat) == "loc_id")] <- "location_name"    
     if (!is.null(extras)) {
       if (any(names(extras) == "loc_id")) names(extras)[which(names(extras) == "loc_id")] <- "location_name"
       extras$species_name <- gsub("(?<!\\w)(.)", "\\U\\1", extras$species_name, perl = TRUE)
@@ -490,9 +494,16 @@ server <- function(input, output, session) {
     all_dat$raw_age <- as.character(all_dat$age)
     all_dat$age <- as.factor(gsub('J', '', all_dat$age))
     
-    all_dat$initials <- all_dat$ringer_initials
-    all_dat$initials[is.na(all_dat$initials) | all_dat$initials == '-'] <- 
-      all_dat$processor_initials[is.na(all_dat$initials) | all_dat$initials == '-']
+    if ("ringer_initials" %in% names(all_dat)) {
+      all_dat$initials <- all_dat$ringer_initials
+    } else {
+      all_dat$initials <- "-"
+    }
+    
+    if ("processor_initials" %in% names(all_dat)) {
+      mask <- is.na(all_dat$initials) | all_dat$initials == '-'
+      all_dat$initials[mask] <- all_dat$processor_initials[mask]
+    }
     
     all_dat$date_time <- as.POSIXct(paste(all_dat$visit_date, all_dat$capture_time), format = '%d/%m/%Y %H:%M')
     all_dat$visit_date <- as.Date(all_dat$visit_date, "%d/%m/%Y")
